@@ -26,6 +26,7 @@ conductivity = 45 #W/m/K
 #Variables
 min_length = 50 #mm
 max_length = 500 #mm
+dew_temp_add = 15 #K
 
 ## Tube in tube
 shell_diameter = 142 #mm

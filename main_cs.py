@@ -12,32 +12,34 @@ gas_viscosity = 0
 
 dewtemp = comp.dew((cf.amb_pressure/1000)*cf.composition[1])#Calculate dew point temperature
 #at.dewpoint(250, cf.composition[1]) 
-calctemp = (cf.gas_ti+dewtemp)/2 #Average temp 
+calctemp = (cf.gas_ti+dewtemp+cf.dew_temp_add)/2 #Average temp 
 
 calctempK = comp.CtoK(calctemp)
 
-print('INPUT')
-print('Gas Information')
-print('Gas input temperature:', cf.gas_ti, '[°C]')
-print('Gas volume flow:', cf.volume_flow, '[Nm3/h]')
-print('Gas composition:', cf.composition_materials)
-print('Gas composition volume fractions:', cf.composition)
-print('Pressure:', cf.amb_pressure, '[Pa]')
-print('Water information')
-print('Water input temperature:', cf.water_ti, '[°C]')
-print('Water output temperature:', cf.water_to, '[°C]')
-print('Other')
-print('Minimal output underpressure:', cf.press_min, '[Pa]')
-print('Input tube diameter:', cf.diameter, '[mm]')
-print('Minimal tube length:', cf.min_length, '[mm]')
-print('Maximal tube length:', cf.max_length, '[mm]')
+print('VSTUP')
+print('Spaliny')
+print('Vstupní teplota:', cf.gas_ti, '[°C]')
+print('Objemový tok:', cf.volume_flow, '[Nm3/h]')
+print('Kompozice spalin:', cf.composition_materials)
+print('Kompozice spalin v obejmových zlomcích:', cf.composition)
+print('Tlak:', cf.amb_pressure, '[Pa]')
+print('Voda')
+print('Vstupní teplota:', cf.water_ti, '[°C]')
+print('Výstupní teplota:', cf.water_to, '[°C]')
+print('Ostatní')
+print('Minimální podtlak na výstupu:', cf.press_min, '[Pa]')
+print('Vstupní průměr:', cf.diameter, '[mm]')
+print('Minimální délka trubky:', cf.min_length, '[mm]')
+print('Maximální délka trubky:', cf.max_length, '[mm]')
 
-print('\nCALCULATED')
-print('Dew point temperature:', round(dewtemp,2), '[°C]')
-print('Average temperature of gas:', round(calctemp,2), '[°C]', 
+print('\nVÝPOČET')
+print('Teplota rosného bodu spalin:', round(dewtemp,2), '[°C]')
+print('Přídavek proti kondenzaci:', cf.dew_temp_add, '[°C]')
+print('Střední teplota spalin:', round(calctemp,2), '[°C]', 
       round(comp.CtoK(calctemp),2), '[K]')
 
-print('\nGAS PROPERTIES')
+print('\nVLASTNOSTI SLOŽEK SPALIN')
+print('MODUL COOLPROP')
 for i in range(len(cf.composition_materials)):
     idensity = comp.Rho(cf.composition_materials[i],cf.amb_pressure,
                                  calctempK) # kg/m3
@@ -49,13 +51,13 @@ for i in range(len(cf.composition_materials)):
                                   calctempK) # Visosity in Pa.s
     
     print(cf.composition_materials[i])
-    print('Phase is',comp.getPhase(cf.composition_materials[i],
+    print('Fáze: ',comp.getPhase(cf.composition_materials[i],
                                    cf.amb_pressure,comp.CtoK(calctemp)))
-    print('Density:', round(idensity,2), '[kg/m3]' )
-    print('Heat capacity:', round(icapacity,2), '[J/kg.K]')
-    print('Volumetric capacity:', round(icapacity*idensity,2), '[J/m3.K]')
-    print('Dynamic viscosity:', iviscosity, 'Pa.s')
-    print('Thermal conductivity:', round(iconductivity,2), '[W/m.K]\n')
+    print('Hustota:', round(idensity,2), '[kg/m3]' )
+    print('Tepelná kapacita:', round(icapacity,2), '[J/kg.K]')
+    print('Tepelná kapacita objemová:', round(icapacity*idensity,2), '[J/m3.K]')
+    print('Dynamický viskozita:', iviscosity, '[Pa.s]\n')
+    #print('Thermal conductivity:', round(iconductivity,2), '[W/m.K]\n')
     
     density = density + idensity*cf.composition[i]
     capacity = capacity + icapacity*cf.composition[i]
@@ -80,20 +82,20 @@ water_viscosity = comp.Viscosity('Water', cf.amb_pressure+cf.water_pressure,
 water_massflow = heatflow/(water_capacity*(cf.water_to-cf.water_ti))
 water_flow = water_massflow/water_density*1000 
 
-print('\nCALCULATED PROPERTIES')
-print('Gas density:', round(density,2),'[kg/m3]')
-print('Gas capacity:', round(capacity,2), '[J/kg.K]')
-print('Gas volumetric capacity:', round(density*capacity,2), '[J/m3.K]')
-print('Gas massflow:', round(massflow,2), '[kg/h]')
-print('Gas heatflow:', round(heatflow/1000,2), '[kJ/h]')
-print('Total gas output:', round(gas_output,2), '[W]\n')
+print('\nVYPOČTENÉ VLASTNOSTI')
+print('Hustota spalin:', round(density,2),'[kg/m3]')
+print('Tepelná kapacita spalin:', round(capacity,2), '[J/kg.K]')
+print('Tepelná kapacita spalin objemová:', round(density*capacity,2), '[J/m3.K]')
+print('Hmotnostní tok spalin:', round(massflow,2), '[kg/h]')
+print('Výkon:', round(heatflow/1000,2), '[kJ/h]')
+print('Výkon:', round(gas_output,2), '[W]\n')
 
-print('Water thermal conductivity:', round(water_conductivity,2), '[W/m.K]')
-print('Water viscosity:', water_viscosity, '[Pa.s]')
-print('Water density:', round(water_density,2), '[Kg/m3]')
-print('Water capacity:',  round(water_capacity,2), '[J/kg.K]')
-print('Water massflow:', round(water_massflow,2), '[kg/h]')
-print('Water flow:', round(water_flow,2), '[l/h]\n')
+print('Tepelná vodivost vody:', round(water_conductivity,2), '[W/m.K]')
+print('Dynamická viskozita vody:', water_viscosity, '[Pa.s]')
+print('Hustota vody:', round(water_density,2), '[Kg/m3]')
+print('Tepelná kapacita vody:',  round(water_capacity,2), '[J/kg.K]')
+print('Hmotnostní tok vody:', round(water_massflow,2), '[kg/h]')
+print('Objemový tok vody:', round(water_flow,2), '[l/h]\n')
 
 
 ## Flow and heat transfer calculation
@@ -114,20 +116,22 @@ water_diffusivity = water_conductivity/(water_density*water_capacity) # m2/s
 water_reynolds = comp.reynolds(water_speed, cf.shell_diameter/1000, water_kviscosity) 
 water_prandtl = comp.prandtl(water_capacity, water_conductivity, water_viscosity)
 
-print('\nFLOW AND HEAT TRANSFER CALCULATION')
-print('Gas speed:', round(gas_speed,2), '[m/s]')
-print('Gas Reynolds:', round(gas_reynolds,0), '[-]')
-print('Gas Prandtl', round(gas_prandtl,5), '[-]\n')
+print('\nVÝPOČET TOKU A PŘESTUPU TEPLA')
+print('Rychlost spalin:', round(gas_speed,2), '[m/s]')
+print('Reynoldsovo číslo spalin:', round(gas_reynolds,0), '[-]')
+print('Prandtlovo číslo spalin', round(gas_prandtl,5), '[-]\n')
 
-print('Water speed:', round(water_speed,5), '[m/s]')
-print('Water Reynolds:', round(water_reynolds,0),'[-]')
-print('Water Prandtl:', round(water_prandtl,5), '[-]\n')
+print('Rychlost vody:', round(water_speed,5), '[m/s]')
+print('Reynoldsovo číslo vody:', round(water_reynolds,0),'[-]')
+print('Prandtlovo číslo vody:', round(water_prandtl,5), '[-]\n')
 
 intube_eqn = comp.choice_flowintube(gas_reynolds, gas_prandtl)
 # For tube in tube design only one equation for water flow exists
 aroundtube_eqn = comp.choice_aroundtube(water_reynolds, water_prandtl)
-print('Equation chosen for gas:', intube_eqn)
-print('Equation chosen for water:', aroundtube_eqn)
+print('\nVÝPOČET NUSSELTOVA ČÍSLA')
+print('Předpoklad výměníku typ "trubka v trubce"')
+print('Rovnice pro spaliny:', intube_eqn)
+print('Rovnice pro vodu:', aroundtube_eqn)
 
 chimneypress = comp.chimPress(density, 1.204, cf.chimneylength/1000)
 
@@ -143,7 +147,7 @@ pressure_exit = []
 
 #Estimate tube length
 if intube_eqn == 'leveque' or intube_eqn == 'hausen':
-    print('\nCalculating heat transfer for water and gas as a function of length.')
+    print('\nIterační výpočet Nusseltova čísla jako funkce délky výměníku.')
     for l in range(cf.min_length,cf.max_length):
         gas_graetz = comp.graetz(cf.diameter, l, gas_reynolds, gas_prandtl)
         water_graetz = comp.graetz(cf.shell_diameter, l, water_reynolds, water_prandtl)
@@ -191,69 +195,69 @@ while not done:
     k = 0
     for x in range(cf.min_length,cf.max_length):
         if abs(x-calculated_length[k]) <= maxdif:
-            print('\nMatch found at L:', x, 'and calc L:', 
+            print('\nShoda nalezena pro výpočetní L:', x, 'a vypočtené L:', 
                   round(calculated_length[k],3), '[mm]')
-            print('Max difference was:', round(maxdif, 4), '[mm]')
-            print('Actual difference:', round(abs(x-calculated_length[k]),3), '[mm]\n')
+            print('Maximální rozdíl:', round(maxdif, 4), '[mm]')
+            print('Sktuečný rozdíl:', round(abs(x-calculated_length[k]),3), '[mm]\n')
             done = True
             break
         k = k+1
     maxdif = maxdif*mult
 
 if done:
-    print('\nPROPERTIES FOR L:', round(calculated_length[k],3), '[mm]')
-    print('Gas Nu:', round(gas_nu[k],3), '[-]')
-    print('Water Nu:', round(water_nu[k],3), '[-]')
-    print('Alfa internal', round(gas_alfa[k], 3),'[W/m2.K]')
-    print('Alfa external:', round(water_alfa[k], 3), '[W/m2.K]')
-    print('Heat transfer coeficient k:', round(heat_transfer[k], 3), '[W/m2.K]')
-    print('Pressure at the exit:', round(pressure_exit[k], 2),'[Pa]\n')
+    print('\nVLASTNOSTI PRO VYPOČTENÉ L:', round(calculated_length[k],3), '[mm]')
+    print('Spaliny Nu:', round(gas_nu[k],3), '[-]')
+    print('Voda Nu:', round(water_nu[k],3), '[-]')
+    print('Alfa vnitřní', round(gas_alfa[k], 3),'[W/m2.K]')
+    print('Alfa vnější:', round(water_alfa[k], 3), '[W/m2.K]')
+    print('Součinitel prostupu tepla:', round(heat_transfer[k], 3), '[W/m2.K]')
+    print('Tlak na výstupu:', round(pressure_exit[k], 2),'[Pa]\n')
     
-    print('\nFINAL DIMENSIONS')
-    print('Inner tube diameter_i:', cf.diameter, '[mm]')
-    print('Inner tube diameter_e:', cf.diameter+2*cf.tube_thickness, '[mm]')
-    print('Outer tube diameter_i:', cf.shell_diameter, '[mm]')
-    print('Outer tube diameter_e:', cf.shell_diameter+2*cf.shell_thickness, '[mm]')
-    print('Length:', round(calculated_length[k],3), '[mm]')
+    print('\nKONEČNÉ ROZMĚRY')
+    print('Vnitřní trubka d_i:', cf.diameter, '[mm]')
+    print('Vnitřní trubka d_e:', cf.diameter+2*cf.tube_thickness, '[mm]')
+    print('Vnější trubka d_i:', cf.shell_diameter, '[mm]')
+    print('Vnější trubka d_e:', cf.shell_diameter+2*cf.shell_thickness, '[mm]')
+    print('Délka:', round(calculated_length[k],3), '[mm]')
 else:
-    print('\nNo match found for selected min and max tube length.')
-    print('Consider adjusting values of min and max length.')
-    print('Min length:', cf.min_length)
-    print('Max length:', cf.max_length)
+    print('\nNenalezena shoda mezi výpočetní a vypočtené délkou.')
+    print('Zkuste změnit minimální a maximální výpočetní délku.')
+    print('Min délka:', cf.min_length)
+    print('Max délka:', cf.max_length)
     
 if cf.plot:
     fig, ax = plt.subplots(3,1,figsize=(8, 8))
     fig.tight_layout(h_pad=5)
     x = list(range(cf.min_length,cf.max_length))
     
-    ax[0].plot(x,x,label = 'L')
-    ax[0].plot(x,calculated_length,label = 'Calculated L')
+    ax[0].plot(x,x,label = 'Výpočetní délka')
+    ax[0].plot(x,calculated_length,label = 'Vypočtená délka')
     ax[0].plot([calculated_length[k], calculated_length[k]], [cf.min_length,cf.max_length],
-               label='Selected length')
+               label='Vybraná délka')
     ax[0].legend(loc = 'upper left')
-    ax[0].set_xlabel('l [mm]')
-    ax[0].set_ylabel('l_expected [mm]')
-    ax[0].set_title('Tube length')
+    ax[0].set_xlabel('L [mm]')
+    ax[0].set_ylabel('L [mm]')
+    ax[0].set_title('Délka trubky')
     
     
     ax[1].plot([cf.min_length, cf.max_length],[cf.press_min,cf.press_min]
-               , label= 'min p')
-    ax[1].plot(x,pressure_exit, label = 'p at exit')
+               , label= 'Min tlak')
+    ax[1].plot(x,pressure_exit, label = 'Tlak na výstupu')
     ax[1].plot([calculated_length[k], calculated_length[k]], [5,chimneypress],
-               label='Selected length')
+               label='Vybraná délka')
     ax[1].legend(loc = 'upper right')
     ax[1].set_xlabel('l [mm]')
     ax[1].set_ylabel('p [Pa]')
-    ax[1].set_title('Pressure loss')
+    ax[1].set_title('(Pod)Tlak na výstupu výměníku')
     
     
     ax[2].plot(x,heat_transfer, label = 'k')
     ax[2].plot([calculated_length[k], calculated_length[k]], [heat_transfer[0],2],
-               label='Selected length', color='green')
+               label='Vybraná délka', color='green')
     ax[2].legend(loc = 'upper right')
     ax[2].set_xlabel('l [mm]')
-    ax[2].set_ylabel('k [W/m2/K]')
-    ax[2].set_title('Heat transfer coeficient')
+    ax[2].set_ylabel('k [W/m2.K]')
+    ax[2].set_title('Součinitel prostupu tepůa')
     
     
     fig.suptitle('Spalinový výměník')
