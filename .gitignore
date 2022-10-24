@@ -1,4 +1,6 @@
+
 __pycache__
 func/__pycache__
 notes.txt
 manual_calc.xlsx
+*.pyc
