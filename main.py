@@ -167,6 +167,7 @@ if intube_eqn == 'leveque' or intube_eqn == 'hausen':
         
         k = 0.8*comp.heat_kwall(ialfa, lalfa, cf.tube_thickness/1000, cf.conductivity) #W/m2/K
         heat_transfer.append(k)
+        #assuming 20% overestimation using wall equation instead of tube equation
         
         needed_l = gas_output/(k*(calctemp-(cf.water_to+
                    cf.water_ti)/2)*comp.circle((cf.diameter+2*cf.tube_thickness))/1000)
