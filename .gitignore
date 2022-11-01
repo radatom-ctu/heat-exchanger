@@ -1,8 +1,6 @@
 
 __pycache__
-.spyproject
 func/__pycache__
 notes.txt
 manual_calc.xlsx
 *.pyc
-*.ini
