@@ -167,7 +167,6 @@ if intube_eqn == 'leveque' or intube_eqn == 'hausen':
         gas_alfa.append(ialfa)
         water_alfa.append(lalfa)
         
-<<<<<<< HEAD
         heat_k = comp.heat_ktube(ialfa, lalfa, cf.diameter,
                                  cf.outer_diameter, cf.conductivity) #W/m2K
         
@@ -175,11 +174,6 @@ if intube_eqn == 'leveque' or intube_eqn == 'hausen':
         
         needed_l = gas_output/(heat_k*(calctemp-(cf.water_to+
                    cf.water_ti)/2)*comp.circle((cf.diameter))/1000)
-=======
-        k = 0.8*comp.heat_kwall(ialfa, lalfa, cf.tube_thickness/1000, cf.conductivity) #W/m2/K
-        heat_transfer.append(k) 
-        #assuming 20% overestimation using wall equation instead of tube equation
->>>>>>> 23c7041f9dd7abcece1a96c88b549c4b2fe0ff7e
         
         calculated_length.append(needed_l*1000) # back to mm
         
@@ -250,7 +244,7 @@ if done:
         print('Přepočtená hodnota délky:', round(needed_l*1000,3),'[mm]')
         print('Rozdíl vůči iterované hodnotě:',
               abs(round(needed_l*1000-calculated_length[k],3)),'[mm]')
-        pass
+        
     
     print('\nKONEČNÉ ROZMĚRY')
     print('Vnitřní trubka d_i:', cf.diameter, '[mm]')
