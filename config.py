@@ -16,23 +16,42 @@ chimneylength = 5000 #mm - Chimney length
 air_temp = -15 #°C - Air temperature
 dew_temp_add = 15 #°C or K - Margin against water condensation
 
+
 #Constants 
 amb_pressure = 101325 #Pa - Ambient temperature
 
+
 #Materials
-diameter = 130 #mm - Inner diameter of the heat exchanger pipe
+input_diameter = 130 #mm - Inner diameter of the heat exchanger pipe
 outer_diameter = 140 #mm - Outer diameter of the heat exchanger pipe
-tube_thickness = (outer_diameter-diameter)/2 #mm - Thickness of the heat exchanger pipe 
-conductivity = 45 #W/mK - Thermal conductivity of the pipe material (carbon steel)
+tube_thickness = (outer_diameter-input_diameter)/2 #mm - Thickness of the heat exchanger pipe 
+conductivity = 35 #W/mK - Thermal conductivity of the pipe material (carbon steel)
+
 
 #Iteration variables
 min_length = 50 #mm - Minimal pipe length for iteration 
 max_length = 500 #mm - Maximal pipe length for iteration
+step_size = 10 #mm - Iteration step size (must be type int)
 
-## Tube in tube
-shell_diameter = 142 #mm - Outer pipe inner diameter
-shell_thickness = 5 #mm - Outer pipe wall thickness
+## Multiple pipes
+pipe_size = [20,21.3,22.0,25.0,26.9,28,31.8,33.7,35.0,38.0,40,42.4,44.5,45.3,51,54] # Pipe sizes
+pipe_thickness = [2.6]#,2.9,3.2] # Pipe thickness for size
+water_tdelta = 20 # K - Maximal water temperature change wanted range(1,water_tdelta)
+
 
 #Options
 plot = False # Plot yes/no
+output_temperature = False # Use water output temperature
+
+## Multiple pipes
+multiple_pipes = True # Multiple pipes calculation 
+pipe_margin = 5 # mm - Minimal distance between each pipe, equal in x and y
+n_partitions = 3 # Number of partitions 
+
+## Tube in tube
+one_pipe = False # Tube in tube calculation
 test_length_value = True # Rechecks the values after iteration by rerunning the calculation
+shell_diameter = 142 #mm - Outer pipe inner diameter
+shell_thickness = 5 #mm - Outer pipe wall thickness
+
+

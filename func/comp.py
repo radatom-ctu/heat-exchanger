@@ -8,6 +8,10 @@ def KtoC(temp): # K to °C
 def CtoK(temp): # °C to K
     return temp+273.15
 
+# Unit conversions
+def mm2tom2(mm):
+    return mm/pow(10,6)
+
 # Dew temp https://en.citizendium.org/wiki/Water_dew_point
 def dew(pressure): #partial pressure in kPa returns °C
     return KtoC((1668.21/(7.09171-np.log10(pressure)))+45.15)
@@ -29,6 +33,8 @@ def Phase(material, pressure, temp): # Returns phase of material at spec. temp a
 # Area 
 def circle(diameter): # Circle area in mm2
     return ((np.pi)*pow(diameter,2))/4 
+def circleLen(diameter):
+    return (np.pi)*diameter
 def cylinder(diameter,length): # Cylinder wrap area in mm2
     return circle(diameter)*length
 def cylinderLength(diameter,area): # Cylinder length from area in mm 
@@ -43,6 +49,8 @@ def prandtl(capacity,conductivity,d_viscosity): # Returns Prandtl number
 def graetz(diameter,length,reynolds,prandtl): # Returns Graetz number
     return (diameter/length)*reynolds*prandtl 
 
+def reySpeed(reynolds,diameter,k_viscosity): #Input in base units
+    return (reynolds*k_viscosity)/diameter # Returns m/s
     
 # Chimney effect pressure
 def chimPress(density_in, density_out, length): # Returns chimney effect pressure
@@ -79,7 +87,7 @@ def whitaker(reynolds, prandtl): # Whitaker -||-
 def leveque(gr): # Leveque -||-
     return 1.86*pow(gr,1/3)
 def hausen(gr): # Hausen -||-
-    return 3.66*((0.0668*graetz)/(1+(0.04*pow(gr,2/3))))
+    return 3.66*((0.0668*gr)/(1+(0.04*pow(gr,2/3))))
 
 
 # Heat equation in between tubes
