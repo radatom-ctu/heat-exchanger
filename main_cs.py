@@ -23,7 +23,6 @@ print('Kompozice spalin v obejmových zlomcích:', cf.composition)
 print('Tlak:', cf.amb_pressure, '[Pa]')
 print('Voda')
 print('Vstupní teplota:', cf.water_ti, '[°C]')
-print('Výstupní teplota:', cf.water_to, '[°C]')
 print('Ostatní')
 print('Minimální podtlak na výstupu:', cf.press_min, '[Pa]')
 print('Vstupní průměr:', cf.input_diameter, '[mm]')
@@ -195,7 +194,7 @@ if cf.multiple_pipes:
                     water_massflow = ((comp.mm2tom2(water_flow_area)
                                       *calc_speed)*water_density)*3600 # kg/h - Water massflow
                     water_deltaT = heatflow/(water_massflow*water_capacity) # K - Water heating dT
-                    temp_change = (calctemp - (cf.water_to+water_deltaT)/2) # K - Calculated dT between pipe and water
+                    temp_change = (calctemp - (2*cf.water_ti+water_deltaT)/2) # K - Calculated dT between pipe and water
                     
                     exchanger_power = pipes_area*heat_k*temp_change # W - Calculated exchanger power
                     
