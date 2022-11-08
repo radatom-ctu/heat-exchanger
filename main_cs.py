@@ -1,7 +1,6 @@
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import func.comp as comp
 import config as cf
-import numpy as np
 import math
 
 ## Base heat calculation
@@ -64,7 +63,7 @@ for i in range(len(cf.composition_materials)):
 
 
 massflow = cf.volume_flow*density # kg/h
-heatflow = massflow*capacity*(cf.gas_ti-dewtemp) # J/h
+heatflow = massflow*capacity*(cf.gas_ti-(dewtemp+cf.dew_temp_add)) # J/h
 gas_output = heatflow/3600 # W
 
 water_density = comp.Rho('Water', cf.amb_pressure+cf.water_pressure,
@@ -75,13 +74,6 @@ water_conductivity = comp.Conductivity('Water', cf.amb_pressure+cf.water_pressur
                          comp.CtoK(cf.water_ti)) # Get water heat conductivity
 water_viscosity = comp.Viscosity('Water', cf.amb_pressure+cf.water_pressure,
                          comp.CtoK(cf.water_ti)) # Get water viscosity
-
-#Given output temperature
-water_massflow = heatflow/(water_capacity*(cf.water_to-cf.water_ti))
-water_flow = water_massflow/water_density*1000 
-
-#Without output temperature
-water_delta = heatflow/water_capacity #kg.K/h
 
 air_density = comp.Rho('air', cf.amb_pressure, comp.CtoK(cf.air_temp))
 chimneypress = comp.chimPress(density, air_density, cf.chimneylength/1000)
@@ -101,8 +93,6 @@ print('Tepelná vodivost vody:', round(water_conductivity,2), '[W/m.K]')
 print('Dynamická viskozita vody:', water_viscosity, '[Pa.s]')
 print('Hustota vody:', round(water_density,2), '[Kg/m3]')
 print('Tepelná kapacita vody:',  round(water_capacity,2), '[J/kg.K]')
-print('Hmotnostní tok vody:', round(water_massflow,2), '[kg/h]')
-print('Objemový tok vody:', round(water_flow,2), '[l/h]\n')
 
 print('Podtlak způsobený komínovým efektem:', round(chimneypress, 2), '[Pa]\n')
 
@@ -110,203 +100,6 @@ print('Podtlak způsobený komínovým efektem:', round(chimneypress, 2), '[Pa]\
 
 gas_prandtl = comp.prandtl(capacity, conductivity, gas_viscosity)
 water_prandtl = comp.prandtl(water_capacity, water_conductivity, water_viscosity)
-
-#Asuming tube-in-tube design
-if cf.one_pipe:   
-    gas_speed = cf.volume_flow/comp.circle(
-                cf.input_diameter/1000)/3600 # Gas speed inside tube in m/s
-    gas_diffusivity = conductivity/(density*capacity) # m2/s
-    gas_reynolds = comp.reynolds(gas_speed, cf.input_diameter/1000, gas_kviscosity)
-    gas_prandtl = comp.prandtl(capacity, conductivity, gas_viscosity)
-    
-    water_speed = (water_flow/(3600*1000))/(comp.circle((
-        cf.shell_diameter)/1000)-comp.circle(cf.input_diameter/1000)) # Water speed around tube in m/s
-    water_diffusivity = water_conductivity/(water_density*water_capacity) # m2/s
-    water_reynolds = comp.reynolds(water_speed, cf.shell_diameter/1000, water_kviscosity) 
-    water_prandtl = comp.prandtl(water_capacity, water_conductivity, water_viscosity)
-    
-    print('\nVÝPOČET TOKU A PŘESTUPU TEPLA')
-    print('Rychlost spalin:', round(gas_speed,2), '[m/s]')
-    print('Reynoldsovo číslo spalin:', round(gas_reynolds,0), '[-]')
-    print('Prandtlovo číslo spalin', round(gas_prandtl,5), '[-]\n')
-    
-    print('Rychlost vody:', round(water_speed,5), '[m/s]')
-    print('Reynoldsovo číslo vody:', round(water_reynolds,0),'[-]')
-    print('Prandtlovo číslo vody:', round(water_prandtl,5), '[-]\n')
-    
-    intube_eqn = comp.choice_flowintube(gas_reynolds, gas_prandtl)
-    
-    aroundtube_eqn = comp.choice_aroundtube(water_reynolds, water_prandtl)
-    print('\nVÝPOČET NUSSELTOVA ČÍSLA')
-    print('Předpoklad výměníku typ "trubka v trubce"')
-    print('Rovnice pro spaliny:', intube_eqn)
-    print('Rovnice pro vodu:', aroundtube_eqn)
-    
-    gas_nu = []
-    water_nu = []
-    
-    gas_alfa = []
-    water_alfa = []
-    
-    heat_transfer = []
-    calculated_length = []
-    pressure_exit = []
-    pressure_loss = []
-    
-    #Estimate pipe length
-    if intube_eqn == 'leveque' or intube_eqn == 'hausen':
-        print('\nIterační výpočet Nusseltova čísla jako funkce délky výměníku.')
-        for l in range(cf.min_length,cf.max_length):
-            gas_graetz = comp.graetz(cf.input_diameter, l, gas_reynolds, gas_prandtl)
-            water_graetz = comp.graetz(cf.shell_diameter, l, water_reynolds, water_prandtl)
-            
-            if intube_eqn == 'leveque':
-                inu = comp.leveque(gas_graetz)
-            else:
-                inu = comp.hausen(gas_graetz)
-            
-            lnu = comp.gni(water_graetz, cf.input_diameter+2*cf.tube_thickness, cf.shell_diameter)
-            
-            gas_nu.append(inu)
-            water_nu.append(lnu) 
-            
-            ialfa = comp.alfa(inu, conductivity,
-                              cf.input_diameter/1000)
-            lalfa = comp.alfa(lnu, water_conductivity,
-                              (cf.input_diameter+2*cf.tube_thickness)/1000)
-            gas_alfa.append(ialfa)
-            water_alfa.append(lalfa)
-            
-            heat_k = comp.heat_ktube(ialfa, lalfa, cf.input_diameter,
-                                     cf.outer_diameter, cf.conductivity) #W/m2K
-            
-            heat_transfer.append(heat_k)
-            
-            needed_l = gas_output/(heat_k*(calctemp-(cf.water_to+
-                       cf.water_ti)/2)*comp.circleLen(cf.input_diameter/1000))
-            
-            calculated_length.append(needed_l*1000) # back to mm
-            
-            if gas_reynolds < 2300:
-                lamb_coef = 64/gas_reynolds   
-                ipressloss = lamb_coef*((pow(gas_speed,2)*l)/(2*cf.input_diameter/1000))
-            pressure_loss.append(ipressloss)
-            pressure_exit.append(chimneypress-ipressloss)      
-    else: #other eqns
-        pass
-    
-    # Finding calculated value match
-    maxdif = 0.00001
-    limit = 5
-    mult = 1.01
-    done = False
-    
-    while not done:
-        if maxdif > limit:
-            break 
-        k = 0
-        for x in range(cf.min_length,cf.max_length):
-            if abs(x-calculated_length[k]) <= maxdif:
-                print('\nShoda nalezena pro výpočetní L:', x, 'a vypočtené L:', 
-                      round(calculated_length[k],3), '[mm]')
-                print('Maximální rozdíl:', round(maxdif, 4), '[mm]')
-                print('Sktuečný rozdíl:', round(abs(x-calculated_length[k]),3), '[mm]\n')
-                done = True
-                break
-            k = k+1
-        maxdif = maxdif*mult
-    
-    if done:
-        print('\nVLASTNOSTI PRO VYPOČTENÉ L:', round(calculated_length[k],3), '[mm]')
-        print('Spaliny Nu:', round(gas_nu[k],3), '[-]')
-        print('Voda Nu:', round(water_nu[k],3), '[-]')
-        print('Alfa vnitřní', round(gas_alfa[k], 3),'[W/m2.K]')
-        print('Alfa vnější:', round(water_alfa[k], 3), '[W/m2.K]')
-        print('Součinitel prostupu tepla:', round(heat_transfer[k], 3), '[W/m2.K]')
-        print('Tlaková ztráta:', round(pressure_loss[k],2), '[Pa]')
-        print('Podtlak na výstupu:', round(pressure_exit[k], 2),'[Pa]\n')
-        
-        # Re-run the calculation again using the iterated length 
-        # the length calculated here should be the same as the iterated length
-        if cf.test_length_value:
-            gas_graetz = comp.graetz(cf.input_diameter, calculated_length[k],
-                                     gas_reynolds, gas_prandtl)
-            water_graetz = comp.graetz(cf.shell_diameter, calculated_length[k],
-                                     water_reynolds, water_prandtl)
-            if intube_eqn == 'leveque':
-                inu = comp.leveque(gas_graetz)
-            else:
-                inu = comp.hausen(gas_graetz)
-            
-            lnu = comp.gni(water_graetz, cf.input_diameter+2*cf.tube_thickness, cf.shell_diameter)
-            
-            ialfa = comp.alfa(inu, conductivity,
-                              cf.input_diameter/1000)
-            lalfa = comp.alfa(lnu, water_conductivity,
-                              (cf.input_diameter+2*cf.tube_thickness)/1000)
-            
-            heat_k = comp.heat_ktube(ialfa, lalfa, cf.diameter,
-                                     cf.outer_diameter, cf.conductivity) #W/m2K
-            
-            needed_l = gas_output/(heat_k*(calctemp-(cf.water_to+
-                       cf.water_ti)/2)*comp.circleLen(cf.input_diameter/1000))
-            
-            print('Přepočtená hodnota délky:', round(needed_l*1000,3),'[mm]')
-            print('Rozdíl vůči iterované hodnotě:',
-                  abs(round(needed_l*1000-calculated_length[k],3)),'[mm]')
-            
-        
-        print('\nKONEČNÉ ROZMĚRY')
-        print('Vnitřní trubka d_i:', cf.input_diameter, '[mm]')
-        print('Vnitřní trubka d_e:', cf.input_diameter+2*cf.tube_thickness, '[mm]')
-        print('Vnější trubka d_i:', cf.shell_diameter, '[mm]')
-        print('Vnější trubka d_e:', cf.shell_diameter+2*cf.shell_thickness, '[mm]')
-        print('Délka:', round(calculated_length[k],3), '[mm]')
-    else:
-        print('\nNenalezena shoda mezi výpočetní a vypočtenou délkou.')
-        print('Zkuste změnit minimální a maximální výpočetní délku.')
-        print('Min délka:', cf.min_length)
-        print('Max délka:', cf.max_length)
-           
-       
-    if cf.plot:
-        fig, ax = plt.subplots(3,1,figsize=(8, 8))
-        fig.tight_layout(h_pad=5)
-        x = list(range(cf.min_length,cf.max_length))
-        
-        ax[0].plot(x,x,label = 'Výpočetní délka')
-        ax[0].plot(x,calculated_length,label = 'Vypočtená délka')
-        #ax[0].plot([calculated_length[k], calculated_length[k]], [cf.min_length,cf.max_length],
-        #           label='Vybraná délka')
-        ax[0].legend(loc = 'upper left')
-        ax[0].set_xlabel('L [mm]')
-        ax[0].set_ylabel('L [mm]')
-        ax[0].set_title('Délka trubky')
-        
-        
-        ax[1].plot([cf.min_length, cf.max_length],[cf.press_min,cf.press_min]
-                   , label= 'Min tlak')
-        ax[1].plot(x,pressure_exit, label = 'Tlak na výstupu')
-        #ax[1].plot([calculated_length[k], calculated_length[k]], [5,chimneypress],
-        #          label='Vybraná délka')
-        ax[1].legend(loc = 'upper right')
-        ax[1].set_xlabel('l [mm]')
-        ax[1].set_ylabel('p [Pa]')
-        ax[1].set_title('Podtlak na výstupu výměníku')
-        
-        
-        ax[2].plot(x,heat_transfer, label = 'k')
-        #ax[2].plot([calculated_length[k], calculated_length[k]], [heat_transfer[0],2],
-        #           label='Vybraná délka', color='green')
-        ax[2].legend(loc = 'upper right')
-        ax[2].set_xlabel('l [mm]')
-        ax[2].set_ylabel('k [W/m2.K]')
-        ax[2].set_title('Součinitel prostupu tepůa')
-        
-        
-        fig.suptitle('Spalinový výměník')
-        plt.subplots_adjust(top=0.9)
-        plt.show()
         
 #Asuming multiple pipes design
 if cf.multiple_pipes:
@@ -321,7 +114,7 @@ if cf.multiple_pipes:
             n_row = n_col
             
 
-            if n_col == 1: # If not fit on side, fit on diagonal
+            if n_col == 1: # If pipees dont fit on side, fit on diagonal
                 n_col = 2              
                 pipe_margin = (cf.input_diameter-2*pipe_diameter)/3 # Change margin to reflect the change
             
@@ -331,8 +124,9 @@ if cf.multiple_pipes:
                     n_row = n
                 
                 n_col = n
-
-                gas_speed = cf.volume_flow/(n*comp.circle((pipe_diameter-2*pipe_thickness)/1000))/3600 
+                n_pipes = n_col*n_row
+                
+                gas_speed = cf.volume_flow/(n_pipes*comp.circle((pipe_diameter-2*pipe_thickness)/1000))/3600 
                 gas_reynolds = comp.reynolds(gas_speed,pipe_diameter/1000,gas_kviscosity)
                 for l in range(cf.min_length, cf.max_length+1,cf.step_size): # For each length
                     eqn_choice = comp.choice_flowintube(gas_reynolds, gas_prandtl)
@@ -360,14 +154,14 @@ if cf.multiple_pipes:
                     #water_flow_max - Maximal volumetric waterflow - m3/s
                                                        
                     # Using a rectangle as an area of flow to estimate speed
-                    # Crossectional area of all pipes
-                    pipe_crossection_area = ((l/cf.n_partitions)*pipe_diameter)*n # mm2
+                    # Crossectional area of all pipes in a row/col
+                    pipe_crossection_area = ((l/(cf.n_partitions+1))*pipe_diameter)*n # mm2
                     # Final waterflow area
                     water_flow_area = (cf.input_diameter*(
-                                       l/cf.n_partitions))-pipe_crossection_area # mm2
+                                       l/(cf.n_partitions+1)))-pipe_crossection_area # mm2
                   
                     rey_circumference = ((n_col+1)*((2*(cf.input_diameter-(
-                                        n_col*pipe_diameter))/(n_col+1))+2*l/cf.n_partitions))/1000 #m
+                                        n_col*pipe_diameter))/(n_col+1))+2*l/(cf.n_partitions+1)))/1000 #m
                     rey_diameter = ((4*comp.mm2tom2(water_flow_area))/(rey_circumference)) # m 
 
                     water_speed_min = comp.reySpeed(1500, rey_diameter, water_kviscosity) #m/s
@@ -376,14 +170,15 @@ if cf.multiple_pipes:
                     water_flow_max = water_speed_max*comp.mm2tom2(water_flow_area) #m3/s
                     water_flow_min = water_speed_min*comp.mm2tom2(water_flow_area) #m3/s
 
+                    # Water speed selection - affects the ration of massflow/dT
                     if water_speed_min<0.2:
-                        water_speed_min = 0.2
+                        water_speed_min = 0.01
                     if water_speed_max>0.8:
                         water_speed_max = 0.8
                     
-                    calc_speed = (water_speed_max+water_speed_min)/2 # average
+                    calc_speed = water_speed_min
                     
-                    #Calculate alfa_e
+                    #Calculate alfa_e - Dlouhý, T: Výpočty kotlů a spalinových výměníků - str. 98
                     c_z = 0.91+0.0125*(n_col-2)
                     
                     sigma_1 = (pipe_margin+pipe_diameter)/pipe_diameter
@@ -393,20 +188,39 @@ if cf.multiple_pipes:
                     alfa_e = 0.2*c_z*c_s*(cf.conductivity/(pipe_diameter/1000))*pow(
                             (calc_speed*(pipe_diameter/1000))/water_kviscosity,0.65)*pow(
                                 water_prandtl,0.33)
-                    heat_k = comp.heat_ktube(alfa_i,alfa_e,pipe_diameter-2*pipe_thickness, pipe_diameter,cf.conductivity)
                     
-                    pipe_area = comp.mm2tom2(comp.cylinder(pipe_diameter, l)*n_col*n_row) #m2
-                    deltaT = 100 #k
+                    heat_k = comp.heat_ktube(alfa_i,alfa_e,pipe_diameter-2*pipe_thickness, pipe_diameter,cf.conductivity) # W/m2K
+                    pipes_area = comp.mm2tom2(comp.cylinder(pipe_diameter, l)*n_col*n_row) # m2 - Area of pipes 
                     
-                    power = pipe_area*deltaT*heat_k
+                    water_massflow = ((comp.mm2tom2(water_flow_area)
+                                      *calc_speed)*water_density)*3600 # kg/h - Water massflow
+                    water_deltaT = heatflow/(water_massflow*water_capacity) # K - Water heating dT
+                    temp_change = (calctemp - (cf.water_to+water_deltaT)/2) # K - Calculated dT between pipe and water
+                    
+                    exchanger_power = pipes_area*heat_k*temp_change # W - Calculated exchanger power
+                    
+                    if gas_reynolds < 2300: # Pressure loss coeficient in pipe
+                        lamb_coef = 64/gas_reynolds   
+                    else:
+                        lamb_coef = 0.06
+                            
+                    press_loss_pipe = lamb_coef*((density*pow(gas_speed,2)*(
+                                 l/1000))/(2*(pipe_diameter-2*pipe_thickness)/1000)) # Pressure loss in pipe
+                    press_loss_local = cf.local_press_mult*density*(pow(gas_speed,2)/2) # Local pressure loss in pipe entrance 
+                    press_loss = (press_loss_pipe + press_loss_local)
                     
                     results.append([pipe_diameter,pipe_thickness,n_col,n_row,l,
-                                    calc_speed,water_speed_min,water_speed_max,alfa_i,alfa_e,heat_k,eqn_choice,power])
+                                    pipes_area,
+                                    calc_speed,water_speed_min,water_speed_max,
+                                    alfa_i,alfa_e,heat_k,comp.mm2tom2(water_flow_area),
+                                    water_massflow,water_deltaT,temp_change,exchanger_power,press_loss])
+                    results_notes=["pipe d","pipe thickness","n_col","n_row","l",
+                                   "pipes area","calc_speed","water_speed_min","water_speed_max",
+                                   "alfa_i","alfa_e","heat_k","water flow area"
+                                   ,"water_massflow","water dT","temp change","exchanger power","pressure loss"]
                     
-    x = list(map(lambda x:x[4], results))[:n_iterations+1] 
-    y = list(map(lambda y:y[12], results))[:n_iterations+1]
-    
-    fig, ax = plt.subplots(3,1,figsize=(8, 8))
-    fig.tight_layout(h_pad=5)
-    ax[0].plot(x,y,label = '')
-    
+        selected_results = []
+        for exchanger in results: #filter results
+            if abs(exchanger[16]-gas_output) <= 25: #power filter
+                if chimneypress-exchanger[17] >= 12: #pressure loss filter
+                    selected_results.append(exchanger)   
