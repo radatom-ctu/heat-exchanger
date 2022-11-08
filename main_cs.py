@@ -214,10 +214,13 @@ if cf.multiple_pipes:
                                     calc_speed,water_speed_min,water_speed_max,
                                     alfa_i,alfa_e,heat_k,comp.mm2tom2(water_flow_area),
                                     water_massflow,water_deltaT,temp_change,exchanger_power,press_loss])
-                    results_notes=["pipe d","pipe thickness","n_col","n_row","l",
-                                   "pipes area","calc_speed","water_speed_min","water_speed_max",
-                                   "alfa_i","alfa_e","heat_k","water flow area"
-                                   ,"water_massflow","water dT","temp change","exchanger power","pressure loss"]
+                    results_notes=["Průměr trubky (mm)","Velikost stěny (mm)","N trubek ve sloupci",
+                                   "N trubek v řadě","Délka trubek (mm)","Plocha trubek (mm2)",
+                                   "Výpočtová rychlost proudění vody (m/s)",
+                                   "Minimální možná rychlost vody (m/s)","Maximální možná rychlost (m/s)",
+                                   "alfa_i (W/m2K)","alfa_e (W/m2K)","k (W/m2K)","Plocha prouodění vody (m2)"
+                                   ,"Hmotnostní took vody (kg/h)","Voda dT (K)","Teplotní rozdíl (K)",
+                                   "Výkon výměníku (W)","Tlaková ztráta (Pa)"]
                     
         selected_results = []
         for exchanger in results: #filter results
