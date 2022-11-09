@@ -170,12 +170,12 @@ if cf.multiple_pipes:
                     water_flow_min = water_speed_min*comp.mm2tom2(water_flow_area) #m3/s
 
                     # Water speed selection - affects the ration of massflow/dT
-                    if water_speed_min<0.2:
-                        water_speed_min = 0.01
+                    if water_speed_min<0.03:
+                        water_speed_min = 0.03
                     if water_speed_max>0.8:
                         water_speed_max = 0.8
                     
-                    calc_speed = water_speed_min
+                    calc_speed = min(water_speed_min,water_speed_max)
                     
                     #Calculate alfa_e - Dlouhý, T: Výpočty kotlů a spalinových výměníků - str. 98
                     c_z = 0.91+0.0125*(n_col-2)
@@ -184,7 +184,7 @@ if cf.multiple_pipes:
                     sigma_2 = sigma_1
                     c_s = 1/pow(1+(2*sigma_1-3)*pow(1-sigma_2/2,3),2)
                     
-                    alfa_e = 0.2*c_z*c_s*(cf.conductivity/(pipe_diameter/1000))*pow(
+                    alfa_e = 0.2*c_z*c_s*(water_conductivity/(pipe_diameter/1000))*pow(
                             (calc_speed*(pipe_diameter/1000))/water_kviscosity,0.65)*pow(
                                 water_prandtl,0.33)
                     
@@ -214,10 +214,10 @@ if cf.multiple_pipes:
                                     alfa_i,alfa_e,heat_k,comp.mm2tom2(water_flow_area),
                                     water_massflow,water_deltaT,temp_change,exchanger_power,press_loss])
                     results_notes=["Průměr trubky (mm)","Velikost stěny (mm)","N trubek ve sloupci",
-                                   "N trubek v řadě","Délka trubek (mm)","Plocha trubek (mm2)",
+                                   "N trubek v řadě","Délka trubek (mm)","Plocha trubek (m2)",
                                    "Výpočtová rychlost proudění vody (m/s)",
                                    "Minimální možná rychlost vody (m/s)","Maximální možná rychlost (m/s)",
-                                   "alfa_i (W/m2K)","alfa_e (W/m2K)","k (W/m2K)","Plocha prouodění vody (m2)"
+                                   "alfa_i (W/m2K)","alfa_e (W/m2K)","k (W/m2K)","Plocha proudění vody (m2)"
                                    ,"Hmotnostní took vody (kg/h)","Voda dT (K)","Teplotní rozdíl (K)",
                                    "Výkon výměníku (W)","Tlaková ztráta (Pa)"]
                     
