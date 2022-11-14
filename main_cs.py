@@ -104,8 +104,8 @@ water_prandtl = comp.prandtl(water_capacity, water_conductivity, water_viscosity
 if cf.multiple_pipes:
     results = []
     n_iterations = math.floor((cf.max_length-cf.min_length)/cf.step_size)
-    for i,pipe_diameter in enumerate(cf.pipe_size): # For each pipe size
-        for k,pipe_thickness in enumerate(cf.pipe_thickness): # For each pipe thickness    
+    for pipe_diameter in cf.pipe_size: # For each pipe size
+        for pipe_thickness in cf.pipe_thickness: # For each pipe thickness    
             pipe_margin = cf.pipe_margin # Create local pipe_margin variable
             square_side = (cf.input_diameter)/math.sqrt(2) # Side of a square inside the circle
             # Maximum n pipes in col/row
@@ -113,7 +113,7 @@ if cf.multiple_pipes:
             n_row = n_col
             
 
-            if n_col == 1: # If pipees dont fit on side, fit on diagonal
+            if n_col == 1: # If pipees dont fit on side, fit on "diagonal"
                 n_col = 2              
                 pipe_margin = (cf.input_diameter-2*pipe_diameter)/3 # Change margin to reflect the change
             
@@ -154,11 +154,33 @@ if cf.multiple_pipes:
                                                        
                     # Using a rectangle as an area of flow to estimate speed
                     # Crossectional area of all pipes in a row/col
-                    pipe_crossection_area = ((l/(cf.n_partitions+1))*pipe_diameter)*n # mm2
+                    # Square side = a -> rectangle short side of row pair = b, long side = c                  
+                    odd = 0 # Addition for odd amount of rows
+                    Atotal = 0 # Total area addition 
+                    if n_row != 1:
+                        if n_col%2 != 0:
+                            odd = 1
+                        for row in range(1,math.floor(n/2)+odd+1):
+                            b = square_side-(pipe_margin+pipe_diameter/2)*row*2-(row-1)*pipe_diameter
+                            if abs(b) <= 0.0001: # Odd row
+                                c = cf.input_diameter
+                            else:
+                                c = math.sqrt(pow(cf.input_diameter,2)-pow(b,2)) # Pytaghoras
+                            A = (l/(cf.n_partitions+1))*(c-n_col*pipe_diameter) # Area of empty crossesction
+                            Atotal = Atotal + A
+                        water_flow_area = Atotal/row #mm2
+                    else:
+                        c = cf.input_diameter
+                        water_flow_area = (l/(cf.n_partitions+1))*(c-n_col*pipe_diameter) # mm2
+                    #debug - print(square_side,l,n_row,pipe_diameter,pipe_margin,water_flow_area)
+                    
+                    #Old approach
+                    #pipe_crossection_area = ((l/(cf.n_partitions+1))*pipe_diameter)*n # mm2
                     # Final waterflow area
-                    water_flow_area = (cf.input_diameter*(
-                                       l/(cf.n_partitions+1)))-pipe_crossection_area # mm2
-                  
+                    #water_flow_area = (cf.input_diameter*(
+                    #                   l/(cf.n_partitions+1)))-pipe_crossection_area # mm2
+                    #print(water_flow_area)
+                    
                     rey_circumference = ((n_col+1)*((2*(cf.input_diameter-(
                                         n_col*pipe_diameter))/(n_col+1))+2*l/(cf.n_partitions+1)))/1000 #m
                     rey_diameter = ((4*comp.mm2tom2(water_flow_area))/(rey_circumference)) # m 
@@ -194,7 +216,8 @@ if cf.multiple_pipes:
                     water_massflow = ((comp.mm2tom2(water_flow_area)
                                       *calc_speed)*water_density)*3600 # kg/h - Water massflow
                     water_deltaT = heatflow/(water_massflow*water_capacity) # K - Water heating dT
-                    temp_change = (calctemp - (2*cf.water_ti+water_deltaT)/2) # K - Calculated dT between pipe and water
+                    temp_change = (calctemp - (2*cf.water_ti-water_deltaT)/2) # K - Calculated dT between pipe and water
+                    temp_in = cf.water_ti-water_deltaT # °C - water input temperature
                     
                     exchanger_power = pipes_area*heat_k*temp_change # W - Calculated exchanger power
                     
@@ -212,13 +235,13 @@ if cf.multiple_pipes:
                                     pipes_area,
                                     calc_speed,water_speed_min,water_speed_max,
                                     alfa_i,alfa_e,heat_k,comp.mm2tom2(water_flow_area),
-                                    water_massflow,water_deltaT,temp_change,exchanger_power,press_loss])
+                                    water_massflow,water_deltaT,temp_in,exchanger_power,press_loss])
                     results_notes=["Průměr trubky (mm)","Velikost stěny (mm)","N trubek ve sloupci",
                                    "N trubek v řadě","Délka trubek (mm)","Plocha trubek (m2)",
                                    "Výpočtová rychlost proudění vody (m/s)",
                                    "Minimální možná rychlost vody (m/s)","Maximální možná rychlost (m/s)",
                                    "alfa_i (W/m2K)","alfa_e (W/m2K)","k (W/m2K)","Plocha proudění vody (m2)"
-                                   ,"Hmotnostní took vody (kg/h)","Voda dT (K)","Teplotní rozdíl (K)",
+                                   ,"Hmotnostní took vody (kg/h)","Voda dT (K)","Požadovaná teplota vody na vstupu (°C)",
                                    "Výkon výměníku (W)","Tlaková ztráta (Pa)"]
                     
         selected_results = []
@@ -226,3 +249,4 @@ if cf.multiple_pipes:
             if abs(exchanger[16]-gas_output) <= 25: #power filter
                 if chimneypress-exchanger[17] >= 12: #pressure loss filter
                     selected_results.append(exchanger)   
+        

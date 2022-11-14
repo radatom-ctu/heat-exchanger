@@ -5,7 +5,7 @@ composition = [0.087,0.097,0.096,0.712,0.0084] # Flue gass composition in volume
 gas_ti = 250 #°C - Flue gas input temperature
 volume_flow = 20 #Nm3/h - Flue gas volume flow
 ##Cooling medium information
-water_ti = 30 #°C - Water input temperature
+water_ti = 50 #°C - Water output temperature
 water_pressure = 5*pow(10,5) #Pa - Water system gauge pressure
 
 ##Other 
@@ -33,7 +33,9 @@ max_length = 500 #mm - Maximal pipe length for iteration
 step_size = 10 #mm - Iteration step size (must be type int)
 
 ## Multiple pipes
-pipe_size = [20,21.3,22.0,25.0,26.9,28,31.8,33.7,35.0,38.0,40,42.4,44.5,45.3,51,54] # Pipe sizes
+pipe_size = [10.2,12,12.7,13.5,14,16,17.2,18,19,
+             20,21.3,22.0,25.0,26.9,28,31.8,33.7,
+             35.0,38.0,40,42.4,44.5,45.3,51,54] # Pipe sizes
 pipe_thickness = [2.6] # Pipe thickness for size
 pipe_margin = 5 # mm - Minimal distance between each pipe, equal in x and y
 n_partitions = 1 # Number of partitions inside the exchanger
