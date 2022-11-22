@@ -216,8 +216,9 @@ if cf.multiple_pipes:
                     water_massflow = ((comp.mm2tom2(water_flow_area)
                                       *calc_speed)*water_density)*3600 # kg/h - Water massflow
                     water_deltaT = heatflow/(water_massflow*water_capacity) # K - Water heating dT
-                    temp_change = (calctemp - (2*cf.water_ti-water_deltaT)/2) # K - Calculated dT between pipe and water
+                    #temp_change = (calctemp - (2*cf.water_ti-water_deltaT)/2) # K - Calculated dT between pipe and water
                     temp_in = cf.water_ti-water_deltaT # °C - water input temperature
+                    temp_change = comp.logTemp(cf.gas_ti,dewtemp+cf.dew_temp_add, temp_in, cf.water_ti)
                     
                     exchanger_power = pipes_area*heat_k*temp_change # W - Calculated exchanger power
                     
@@ -237,14 +238,14 @@ if cf.multiple_pipes:
                                     pipes_area,
                                     calc_speed,water_speed_min,water_speed_max,
                                     alfa_i,alfa_e,heat_k,comp.mm2tom2(water_flow_area),
-                                    water_massflow,water_deltaT,temp_in,exchanger_power,press_loss])
+                                    water_massflow,water_deltaT,temp_in,exchanger_power,press_loss,temp_change])
                     results_notes=["Průměr trubky (mm)","Velikost stěny (mm)","N trubek ve sloupci",
                                    "N trubek v řadě","Délka trubek (mm)","Plocha trubek (m2)",
                                    "Výpočtová rychlost proudění vody (m/s)",
                                    "Minimální možná rychlost vody (m/s)","Maximální možná rychlost (m/s)",
                                    "alfa_i (W/m2K)","alfa_e (W/m2K)","k (W/m2K)","Plocha proudění vody (m2)"
                                    ,"Hmotnostní took vody (kg/h)","Voda dT (K)","Požadovaná teplota vody na vstupu (°C)",
-                                   "Výkon výměníku (W)","Tlaková ztráta (Pa)"]
+                                   "Výkon výměníku (W)","Tlaková ztráta (Pa)","Log dT (K)"]
                     
         selected_results = []
         for exchanger in results: #filter results

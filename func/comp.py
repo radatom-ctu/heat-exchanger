@@ -7,6 +7,11 @@ def KtoC(temp): # K to °C
     return temp-273.15
 def CtoK(temp): # °C to K
     return temp+273.15
+def logTemp(gas_ti,gas_to,water_ti,water_to): # Log temperature
+    dt1 = gas_ti-water_to
+    dt2 = gas_to-water_ti
+    return (dt1-dt2)/np.log(dt1/dt2)
+
 
 # Unit conversions
 def mm2tom2(mm):
