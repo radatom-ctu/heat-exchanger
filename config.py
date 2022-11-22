@@ -29,16 +29,17 @@ conductivity = 40 #W/mK - Thermal conductivity of the pipe material (carbon stee
 #Iteration variables
 ##Pipe lengths
 min_length = 100 #mm - Minimal pipe length for iteration 
-max_length = 500 #mm - Maximal pipe length for iteration
-step_size = 10 #mm - Iteration step size (must be type int)
+max_length = 700 #mm - Maximal pipe length for iteration
+step_size = 2 #mm - Iteration step size (must be type int)
 
 ## Multiple pipes
 pipe_size = [10.2,12,12.7,13.5,14,16,17.2,18,19,
              20,21.3,22.0,25.0,26.9,28,31.8,33.7,
-             35.0,38.0,40,42.4,44.5,45.3,51,54] # Pipe sizes
-pipe_thickness = [2.6] # Pipe thickness for size
+             35.0] #mm -  Pipe sizes
+pipe_thickness = [1.3] # mm Pipe thickness for size
 pipe_margin = 5 # mm - Minimal distance between each pipe, equal in x and y
-n_partitions = 1 # Number of partitions inside the exchanger
+n_partitions = 15 # Number of partitions inside the exchanger
+partition_thickness = 2 # mm - Partition thickness
 local_press_mult = 0.5 # Local pressure loss on pipe entrance multiplier
 
 

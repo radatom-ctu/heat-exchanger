@@ -22,7 +22,7 @@ print('Kompozice spalin:', cf.composition_materials)
 print('Kompozice spalin v obejmových zlomcích:', cf.composition)
 print('Tlak:', cf.amb_pressure, '[Pa]')
 print('Voda')
-print('Vstupní teplota:', cf.water_ti, '[°C]')
+print('Výstupní teplota:', cf.water_ti, '[°C]')
 print('Ostatní')
 print('Minimální podtlak na výstupu:', cf.press_min, '[Pa]')
 print('Vstupní průměr:', cf.input_diameter, '[mm]')
@@ -128,6 +128,7 @@ if cf.multiple_pipes:
                 gas_speed = cf.volume_flow/(n_pipes*comp.circle((pipe_diameter-2*pipe_thickness)/1000))/3600 
                 gas_reynolds = comp.reynolds(gas_speed,pipe_diameter/1000,gas_kviscosity)
                 for l in range(cf.min_length, cf.max_length+1,cf.step_size): # For each length
+                    #Calculate alfa_i
                     eqn_choice = comp.choice_flowintube(gas_reynolds, gas_prandtl)
                     # Calculate Nusselt number based on flow characteristics
                     if eqn_choice == 'leveque':
@@ -143,7 +144,6 @@ if cf.multiple_pipes:
                     else:
                         gas_nu = comp.colburn(gas_reynolds, gas_prandtl)
                     
-                    #Calculate alfa_i
                     alfa_i = comp.alfa(gas_nu, conductivity, (pipe_diameter-2*pipe_thickness)/1000) # W/m2.K
                     
                     #water_speed_min - Minimal water speed inbetween pipes for Re > 1500
@@ -152,6 +152,7 @@ if cf.multiple_pipes:
                     #water_flow_min - Minimal volumetric waterflow - m3/s
                     #water_flow_max - Maximal volumetric waterflow - m3/s
                                                        
+                    # Calculate water flow area
                     # Using a rectangle as an area of flow to estimate speed
                     # Crossectional area of all pipes in a row/col
                     # Square side = a -> rectangle short side of row pair = b, long side = c                  
@@ -166,23 +167,20 @@ if cf.multiple_pipes:
                                 c = cf.input_diameter
                             else:
                                 c = math.sqrt(pow(cf.input_diameter,2)-pow(b,2)) # Pytaghoras
-                            A = (l/(cf.n_partitions+1))*(c-n_col*pipe_diameter) # Area of empty crossesction
+                            A = ((l+(cf.n_partitions*cf.partition_thickness))
+                                 /(cf.n_partitions+1))*(c-n_col*pipe_diameter) # Area of empty crossesction
                             Atotal = Atotal + A
                         water_flow_area = Atotal/row #mm2
                     else:
                         c = cf.input_diameter
-                        water_flow_area = (l/(cf.n_partitions+1))*(c-n_col*pipe_diameter) # mm2
-                    #debug - print(square_side,l,n_row,pipe_diameter,pipe_margin,water_flow_area)
-                    
-                    #Old approach
-                    #pipe_crossection_area = ((l/(cf.n_partitions+1))*pipe_diameter)*n # mm2
-                    # Final waterflow area
-                    #water_flow_area = (cf.input_diameter*(
-                    #                   l/(cf.n_partitions+1)))-pipe_crossection_area # mm2
-                    #print(water_flow_area)
-                    
+                        water_flow_area = ((l+(cf.n_partitions*cf.partition_thickness))
+                                           /(cf.n_partitions+1))*(c-n_col*pipe_diameter) # mm2
+
+                    # Calculate water reynolds and flow speed
                     rey_circumference = ((n_col+1)*((2*(cf.input_diameter-(
-                                        n_col*pipe_diameter))/(n_col+1))+2*l/(cf.n_partitions+1)))/1000 #m
+                                        n_col*pipe_diameter))/(n_col+1))+2*
+                                        (l+(cf.n_partitions*cf.partition_thickness))
+                                        /(cf.n_partitions+1)))/1000 #m
                     rey_diameter = ((4*comp.mm2tom2(water_flow_area))/(rey_circumference)) # m 
 
                     water_speed_min = comp.reySpeed(1500, rey_diameter, water_kviscosity) #m/s
@@ -191,7 +189,7 @@ if cf.multiple_pipes:
                     water_flow_max = water_speed_max*comp.mm2tom2(water_flow_area) #m3/s
                     water_flow_min = water_speed_min*comp.mm2tom2(water_flow_area) #m3/s
 
-                    # Water speed selection - affects the ration of massflow/dT
+                    # Water speed selection
                     if water_speed_min<0.03:
                         water_speed_min = 0.03
                     if water_speed_max>0.8:
@@ -210,8 +208,10 @@ if cf.multiple_pipes:
                             (calc_speed*(pipe_diameter/1000))/water_kviscosity,0.65)*pow(
                                 water_prandtl,0.33)
                     
+                    # Calculate results
                     heat_k = comp.heat_ktube(alfa_i,alfa_e,pipe_diameter-2*pipe_thickness, pipe_diameter,cf.conductivity) # W/m2K
-                    pipes_area = comp.mm2tom2(comp.cylinder(pipe_diameter, l)*n_col*n_row) # m2 - Area of pipes 
+                    pipes_area = comp.mm2tom2(comp.cylinder(pipe_diameter, 
+                                 l-cf.n_partitions*cf.partition_thickness)*n_col*n_row) # m2 - Area of pipes 
                     
                     water_massflow = ((comp.mm2tom2(water_flow_area)
                                       *calc_speed)*water_density)*3600 # kg/h - Water massflow
@@ -221,6 +221,7 @@ if cf.multiple_pipes:
                     
                     exchanger_power = pipes_area*heat_k*temp_change # W - Calculated exchanger power
                     
+                    # Pressure loss - flue gas side
                     if gas_reynolds < 2300: # Pressure loss coeficient in pipe
                         lamb_coef = 64/gas_reynolds   
                     else:
@@ -231,6 +232,7 @@ if cf.multiple_pipes:
                     press_loss_local = cf.local_press_mult*density*(pow(gas_speed,2)/2) # Local pressure loss in pipe entrance 
                     press_loss = (press_loss_pipe + press_loss_local)
                     
+                    # Results
                     results.append([pipe_diameter,pipe_thickness,n_col,n_row,l,
                                     pipes_area,
                                     calc_speed,water_speed_min,water_speed_max,
@@ -246,7 +248,7 @@ if cf.multiple_pipes:
                     
         selected_results = []
         for exchanger in results: #filter results
-            if abs(exchanger[16]-gas_output) <= 25: #power filter
+            if abs(exchanger[16]-gas_output) <= 1: #power filter
                 if chimneypress-exchanger[17] >= 12: #pressure loss filter
                     selected_results.append(exchanger)   
         
